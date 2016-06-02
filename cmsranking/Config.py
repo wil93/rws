@@ -64,16 +64,9 @@ class Config(object):
                                         "cms", "ranking")
             self.lib_dir = os.path.join("/", "var", "local", "lib",
                                         "cms", "ranking")
-            paths = [os.path.join("/", "usr", "local", "etc",
-                                  "cms.ranking.conf"),
-                     os.path.join("/", "etc", "cms.ranking.conf")]
         else:
             self.log_dir = os.path.join("log", "ranking")
             self.lib_dir = os.path.join("lib", "ranking")
-            paths = [os.path.join(".", "config", "cms.ranking.conf"),
-                     os.path.join("/", "usr", "local", "etc",
-                                  "cms.ranking.conf"),
-                     os.path.join("/", "etc", "cms.ranking.conf")]
 
         try:
             os.makedirs(self.lib_dir)
@@ -90,32 +83,28 @@ class Config(object):
         except OSError:
             pass  # We assume the directory already exists...
 
-        self._load(paths)
-
     def get(self, key):
         """Get the config value for the given key.
 
         """
         return getattr(self, key)
 
-    def _load(self, paths):
-        """Try to load the config files one at a time, until one loads
-        correctly.
+    def load(self, conf_file):
+        """Load the given config file.
 
         """
-        for conf_file in paths:
-            try:
-                self._load_unique(conf_file)
-            except IOError:
-                # We cannot access the file, we skip it.
-                pass
-            except ValueError as exc:
-                print("Unable to load JSON configuration file %s, probably "
-                      "because of a JSON decoding error.\n%r" % (conf_file,
-                                                                 exc))
-            else:
-                print("Using configuration file %s." % conf_file)
-                return
+        try:
+            self._load_unique(conf_file)
+        except IOError:
+            # We cannot access the file, we skip it.
+            pass
+        except ValueError as exc:
+            print("Unable to load JSON configuration file %s, probably "
+                  "because of a JSON decoding error.\n%r" % (conf_file,
+                                                             exc))
+        else:
+            print("Using configuration file %s." % conf_file)
+            return
         print("Warning: no configuration file found.")
 
     def _load_unique(self, path):

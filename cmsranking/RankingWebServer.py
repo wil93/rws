@@ -47,6 +47,7 @@ from werkzeug.utils import redirect
 # Needed for initialization. Do not remove.
 import cmsranking.Logger
 
+from cmscommon import utf8_decoder
 from cmscommon.eventsource import EventSource
 from cmsranking.Config import config
 from cmsranking.Entity import InvalidData
@@ -443,21 +444,63 @@ def main():
 
     """
     parser = argparse.ArgumentParser(
-        description="Ranking for CMS.")
-    parser.add_argument("-d", "--drop", action="store_true",
-                        help="drop the data already stored")
+        description="Ranking for CMS."
+    )
+
+    parser.add_argument(
+        "-d", "--drop",
+        action="store_true",
+        help="Drop the data already stored."
+    )
+    parser.add_argument(
+        "-p", "--port", default=8890,
+        action="store", type=int,
+        help="Listening port for RankingWebServer."
+    )
+    parser.add_argument(
+        "-b", "--bind", default="",
+        action="store", type=utf8_decoder,
+        help="Listening address for RankingWebServer."
+    )
+    parser.add_argument(
+        "-l", "--login", default="usern4me:passw0rd",
+        action="store", type=utf8_decoder,
+        help="Login information for adding and editing data."
+    )
+    parser.add_argument(
+        "-c", "--config",
+        action="store", type=utf8_decoder,
+        help="Path to a JSON config file."
+    )
     args = parser.parse_args()
 
     if args.drop:
         print("Are you sure you want to delete directory %s? [y/N]" %
               config.lib_dir, end='')
         ans = raw_input().lower()
+
         if ans in ['y', 'yes']:
             print("Removing directory %s." % config.lib_dir)
             shutil.rmtree(config.lib_dir)
         else:
             print("Not removing directory %s." % config.lib_dir)
+
         return False
+
+    if args.config:
+        config.load(args.config)
+
+    if args.port:
+        config.http_port = args.port
+
+    if args.bind:
+        config.bind_address = args.bind
+
+    if args.login:
+        assert args.login.count(":") == 1, "The login string should follow " \
+            "the username:password format"
+        config.username = args.login.split(":")[0]
+        config.password = args.login.split(":")[1]
 
     Contest.store.load_from_disk()
     Task.store.load_from_disk()
@@ -498,6 +541,8 @@ def main():
             (config.bind_address, config.https_port), wsgi_app,
             certfile=config.https_certfile, keyfile=config.https_keyfile)
         servers.append(https_server)
+
+    print("RankingWebServer started.")
 
     try:
         gevent.joinall(list(gevent.spawn(s.serve_forever) for s in servers))
