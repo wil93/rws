@@ -65,7 +65,7 @@ class Store(object):
             raise ValueError("The 'entity' parameter "
                              "isn't a subclass of Entity")
         self._entity = entity
-        self._path = os.path.join(config.lib_dir, dir_name)
+        self._path = os.path.join(config.args.lib_dir, dir_name)
         self._depends = depends if depends is not None else []
         self._store = dict()
         self._create_callbacks = list()

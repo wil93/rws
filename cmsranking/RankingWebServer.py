@@ -3,6 +3,7 @@
 
 # Contest Management System - http://cms-dev.github.io/
 # Copyright © 2011-2015 Luca Wehrstedt <luca.wehrstedt@gmail.com>
+# Copyright © 2016 William Di Luigi <williamdiluigi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -21,12 +22,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import argparse
 import functools
 import io
 import json
 import logging
 import os
+import pkg_resources
 import pprint
 import re
 import shutil
@@ -47,7 +48,6 @@ from werkzeug.utils import redirect
 # Needed for initialization. Do not remove.
 import cmsranking.Logger
 
-from cmscommon import utf8_decoder
 from cmscommon.eventsource import EventSource
 from cmsranking.Config import config
 from cmsranking.Entity import InvalidData
@@ -69,7 +69,7 @@ class CustomUnauthorized(Unauthorized):
         # XXX With werkzeug-0.9 a full-featured Response object is
         # returned: there is no need for this.
         response = Response.force_type(response)
-        response.www_authenticate.set_basic(config.realm_name)
+        response.www_authenticate.set_basic(config.args.realm_name)
         return response
 
 
@@ -246,7 +246,7 @@ class StoreHandler(object):
 class DataWatcher(EventSource):
     """Receive the messages from the entities store and redirect them."""
     def __init__(self):
-        self._CACHE_SIZE = config.buffer_size
+        self._CACHE_SIZE = config.args.buffer_size
         EventSource.__init__(self)
 
         Contest.store.add_create_callback(
@@ -443,64 +443,18 @@ def main():
     return (bool): True if executed successfully.
 
     """
-    parser = argparse.ArgumentParser(
-        description="Ranking for CMS."
-    )
-
-    parser.add_argument(
-        "-d", "--drop",
-        action="store_true",
-        help="Drop the data already stored."
-    )
-    parser.add_argument(
-        "-p", "--port", default=8890,
-        action="store", type=int,
-        help="Listening port for RankingWebServer."
-    )
-    parser.add_argument(
-        "-b", "--bind", default="",
-        action="store", type=utf8_decoder,
-        help="Listening address for RankingWebServer."
-    )
-    parser.add_argument(
-        "-l", "--login", default="usern4me:passw0rd",
-        action="store", type=utf8_decoder,
-        help="Login information for adding and editing data."
-    )
-    parser.add_argument(
-        "-c", "--config",
-        action="store", type=utf8_decoder,
-        help="Path to a JSON config file."
-    )
-    args = parser.parse_args()
-
-    if args.drop:
+    if config.args.drop:
         print("Are you sure you want to delete directory %s? [y/N]" %
-              config.lib_dir, end='')
+              config.args.lib_dir, end='')
         ans = raw_input().lower()
 
         if ans in ['y', 'yes']:
-            print("Removing directory %s." % config.lib_dir)
-            shutil.rmtree(config.lib_dir)
+            print("Removing directory %s." % config.args.lib_dir)
+            shutil.rmtree(config.args.lib_dir)
         else:
-            print("Not removing directory %s." % config.lib_dir)
+            print("Not removing directory %s." % config.args.lib_dir)
 
         return False
-
-    if args.config:
-        config.load(args.config)
-
-    if args.port:
-        config.http_port = args.port
-
-    if args.bind:
-        config.bind_address = args.bind
-
-    if args.login:
-        assert args.login.count(":") == 1, "The login string should follow " \
-            "the username:password format"
-        config.username = args.login.split(":")[0]
-        config.password = args.login.split(":")[1]
 
     Contest.store.load_from_disk()
     Task.store.load_from_disk()
@@ -511,9 +465,11 @@ def main():
 
     Scoring.store.init_store()
 
+    web_dir = pkg_resources.resource_filename("cmsranking", "static")
+
     toplevel_handler = RoutingHandler(DataWatcher(), ImageHandler(
-        os.path.join(config.lib_dir, '%(name)s'),
-        os.path.join(config.web_dir, 'img', 'logo.png')))
+        os.path.join(config.args.lib_dir, '%(name)s'),
+        os.path.join(web_dir, 'img', 'logo.png')))
 
     wsgi_app = SharedDataMiddleware(DispatcherMiddleware(
         toplevel_handler,
@@ -524,22 +480,23 @@ def main():
          '/submissions': StoreHandler(Submission.store),
          '/subchanges': StoreHandler(Subchange.store),
          '/faces': ImageHandler(
-             os.path.join(config.lib_dir, 'faces', '%(name)s'),
-             os.path.join(config.web_dir, 'img', 'face.png')),
+             os.path.join(config.args.lib_dir, 'faces', '%(name)s'),
+             os.path.join(web_dir, 'img', 'face.png')),
          '/flags': ImageHandler(
-             os.path.join(config.lib_dir, 'flags', '%(name)s'),
-             os.path.join(config.web_dir, 'img', 'flag.png')),
-         }), {'/': config.web_dir})
+             os.path.join(config.args.lib_dir, 'flags', '%(name)s'),
+             os.path.join(web_dir, 'img', 'flag.png')),
+         }), {'/': web_dir})
 
     servers = list()
-    if config.http_port is not None:
+    if config.args.http_port is not None:
         http_server = WSGIServer(
-            (config.bind_address, config.http_port), wsgi_app)
+            (config.args.bind_address, config.args.http_port), wsgi_app)
         servers.append(http_server)
-    if config.https_port is not None:
+    if config.args.https_port is not None:
         https_server = WSGIServer(
-            (config.bind_address, config.https_port), wsgi_app,
-            certfile=config.https_certfile, keyfile=config.https_keyfile)
+            (config.args.bind_address, config.args.https_port), wsgi_app,
+            certfile=config.args.https_certfile,
+            keyfile=config.args.https_keyfile)
         servers.append(https_server)
 
     print("RankingWebServer started.")

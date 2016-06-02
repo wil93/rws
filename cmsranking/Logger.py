@@ -256,7 +256,7 @@ root_logger.addHandler(shell_handler)
 
 # Define the file handler to output on the specified log directory.
 log_filename = time.strftime("%Y-%m-%d-%H-%M-%S.log")
-file_handler = FileHandler(os.path.join(config.log_dir, log_filename),
+file_handler = FileHandler(os.path.join(config.args.log_dir, log_filename),
                            mode='w', encoding='utf-8')
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(CustomFormatter(False))

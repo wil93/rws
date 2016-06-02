@@ -3,6 +3,7 @@
 
 # Contest Management System - http://cms-dev.github.io/
 # Copyright © 2011-2013 Luca Wehrstedt <luca.wehrstedt@gmail.com>
+# Copyright © 2016 William Di Luigi <williamdiluigi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -21,11 +22,13 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import argparse
 import io
 import json
 import os
-import pkg_resources
 import sys
+
+from cmscommon import utf8_decoder
 
 
 class Config(object):
@@ -36,58 +39,114 @@ class Config(object):
         """Fill this object with the default values for each key.
 
         """
-        # Connection.
-        self.bind_address = ''
-        self.http_port = 8890
-        self.https_port = None
-        self.https_certfile = None
-        self.https_keyfile = None
-        self.timeout = 600  # 10 minutes (in seconds)
+        parser = argparse.ArgumentParser(
+            description="Ranking for CMS.")
 
-        # Authentication.
-        self.realm_name = 'Scoreboard'
-        self.username = 'usern4me'
-        self.password = 'passw0rd'
+        parser.add_argument(
+            "-d", "--drop",
+            action="store_true",
+            help="Drop the data already stored.")
 
-        # Buffers
-        self.buffer_size = 100  # Needs to be strictly positive.
+        parser.add_argument(
+            "-p", "--http-port", default=8890,
+            action="store", type=int,
+            help="Listening HTTP port for RankingWebServer.")
 
-        # File system.
-        self.installed = sys.argv[0].startswith("/usr/") and \
-            sys.argv[0] != '/usr/bin/ipython' and \
-            sys.argv[0] != '/usr/bin/python2' and \
-            sys.argv[0] != '/usr/bin/python'
+        parser.add_argument(
+            "--https-port",
+            action="store", type=int,
+            help="Listening HTTPS port for RankingWebServer.")
 
-        self.web_dir = pkg_resources.resource_filename("cmsranking", "static")
-        if self.installed:
-            self.log_dir = os.path.join("/", "var", "local", "log",
-                                        "cms", "ranking")
-            self.lib_dir = os.path.join("/", "var", "local", "lib",
-                                        "cms", "ranking")
-        else:
-            self.log_dir = os.path.join("log", "ranking")
-            self.lib_dir = os.path.join("lib", "ranking")
+        parser.add_argument(
+            "--https-certfile",
+            action="store", type=utf8_decoder,
+            help="HTTPS certificate file for RankingWebServer.")
 
+        parser.add_argument(
+            "--https-keyfile",
+            action="store", type=utf8_decoder,
+            help="HTTPS key file for RankingWebServer.")
+
+        parser.add_argument(
+            "-t", "--timeout", default=600,  # 10 minutes (in seconds)
+            action="store", type=int,
+            help="Listening HTTPS port for RankingWebServer.")
+
+        parser.add_argument(
+            "-b", "--bind-address", default="",
+            action="store", type=utf8_decoder,
+            help="Listening address for RankingWebServer.")
+
+        parser.add_argument(
+            "--realm-name", default="Scoreboard",
+            action="store", type=utf8_decoder,
+            help="Realm name for authentication.")
+
+        parser.add_argument(
+            "-l", "--login", default="usern4me:passw0rd",
+            action="store", type=utf8_decoder,
+            help="Login information for adding and editing data.")
+
+        parser.add_argument(
+            "--buffer-size", default=100,  # Needs to be strictly positive
+            action="store", type=int,
+            help="Listening HTTPS port for RankingWebServer.")
+
+        parser.add_argument(
+            "-c", "--config",
+            action="store", type=utf8_decoder,
+            help="Path to a JSON config file.")
+
+        parser.add_argument(
+            "--log-dir", default=os.path.join("/", "var", "local", "log",
+                                              "cms", "ranking"),
+            action="store", type=utf8_decoder,
+            help="Directory where RWS will store log files.")
+
+        parser.add_argument(
+            "--lib-dir", default=os.path.join("/", "var", "local", "lib",
+                                              "cms", "ranking"),
+            action="store", type=utf8_decoder,
+            help="Directory where RWS will store runtime data.")
+
+        self.args = parser.parse_args()
+
+        # Ensure that lib and log directories exist (Python >= 3.2)
+        #os.makedirs(self.args.lib_dir, exists_ok=True)
+        #os.makedirs(self.args.log_dir, exists_ok=True)
+
+        # Ensure that lib and log directories exist (Python < 3.2)
         try:
-            os.makedirs(self.lib_dir)
+            os.makedirs(self.args.lib_dir)
+        except OSError:
+            pass  # We assume the directory already exists...
+        try:
+            os.makedirs(self.args.log_dir)
         except OSError:
             pass  # We assume the directory already exists...
 
+        # Parse the authentication string into username and password
         try:
-            os.makedirs(self.web_dir)
-        except OSError:
-            pass  # We assume the directory already exists...
+            self.username, self.password = self.args.login.split(":")
+        except ValueError:
+            print("The login string should follow the username:password "
+                  "format.")
+            sys.exit(1)
 
-        try:
-            os.makedirs(self.log_dir)
-        except OSError:
-            pass  # We assume the directory already exists...
+        # Read (and override) options from a config file, if specified
+        if self.args.config:
+            try:
+                self.load(self.args.config)
+            except IOError:
+                print("Warning: the selected configuration file could not be "
+                      "opened.")
+
 
     def get(self, key):
         """Get the config value for the given key.
 
         """
-        return getattr(self, key)
+        return getattr(self.args, key)
 
     def load(self, conf_file):
         """Load the given config file.
@@ -95,17 +154,12 @@ class Config(object):
         """
         try:
             self._load_unique(conf_file)
-        except IOError:
-            # We cannot access the file, we skip it.
-            pass
         except ValueError as exc:
             print("Unable to load JSON configuration file %s, probably "
                   "because of a JSON decoding error.\n%r" % (conf_file,
                                                              exc))
         else:
             print("Using configuration file %s." % conf_file)
-            return
-        print("Warning: no configuration file found.")
 
     def _load_unique(self, path):
         """Populate the Config class with everything that sits inside
@@ -123,7 +177,7 @@ class Config(object):
 
             # Put everything.
             for key, value in data.iteritems():
-                setattr(self, key, value)
+                setattr(self.args, key, value)
 
 
 # Create an instance of the Config class.
