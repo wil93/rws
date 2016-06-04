@@ -26,9 +26,26 @@ import argparse
 import io
 import json
 import os
+import six
 import sys
 
-from cmscommon import utf8_decoder
+
+def utf8_decoder(value):
+    """Decode given binary to text (if it isn't already) using UTF8.
+
+    value (string): value to decode.
+
+    return (unicode): decoded value.
+
+    raise (TypeError): if value isn't a string.
+
+    """
+    if isinstance(value, six.text_type):
+        return value
+    elif isinstance(value, six.binary_type):
+        return value.decode('utf-8')
+    else:
+        raise TypeError("Not a string.")
 
 
 class Config(object):

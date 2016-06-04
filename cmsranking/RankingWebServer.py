@@ -48,7 +48,7 @@ from werkzeug.utils import redirect
 # Needed for initialization. Do not remove.
 import cmsranking.Logger
 
-from cmscommon.eventsource import EventSource
+from cmsranking.eventsource import EventSource
 from cmsranking.Config import config
 from cmsranking.Entity import InvalidData
 import cmsranking.Contest as Contest

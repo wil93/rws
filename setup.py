@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='rws',
-      version='0.2.0',
+      version='0.3.0',
       description='Ranking Web Server',
       author='Algorithm Ninja',
       author_email='algorithm@ninja',
@@ -17,10 +17,9 @@ setup(name='rws',
           'six',
           'gevent',
           'werkzeug',
-          'cmscommon==0.1.0',
       ],
       entry_points={
           'console_scripts': [
-              'rws=cmsranking.RankingWebServer:main'
+              'rws=cmsranking.RankingWebServer:main',
           ]
       })
