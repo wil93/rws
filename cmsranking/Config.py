@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Contest Management System - http://cms-dev.github.io/
-# Copyright © 2011-2013 Luca Wehrstedt <luca.wehrstedt@gmail.com>
+# Copyright © 2011-2016 Luca Wehrstedt <luca.wehrstedt@gmail.com>
 # Copyright © 2016 William Di Luigi <williamdiluigi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -25,9 +25,15 @@ from __future__ import unicode_literals
 import argparse
 import io
 import json
+import logging
 import os
 import six
 import sys
+
+from cmsranking.Logger import add_file_handler
+
+
+logger = logging.getLogger(__name__)
 
 
 def utf8_decoder(value):
@@ -142,22 +148,20 @@ class Config(object):
         except OSError:
             pass  # We assume the directory already exists...
 
+        # Send log output to log_dir
+        add_file_handler(self.args.log_dir)
+
         # Parse the authentication string into username and password
         try:
             self.username, self.password = self.args.login.split(":")
         except ValueError:
-            print("The login string should follow the username:password "
-                  "format.")
+            logger.exception("The login string should follow the "
+                "username:password format.")
             sys.exit(1)
 
         # Read (and override) options from a config file, if specified
         if self.args.config:
-            try:
-                self.load(self.args.config)
-            except IOError:
-                print("Warning: the selected configuration file could not be "
-                      "opened.")
-
+            self.load(self.args.config)
 
     def get(self, key):
         """Get the config value for the given key.
@@ -165,36 +169,26 @@ class Config(object):
         """
         return getattr(self.args, key)
 
-    def load(self, conf_file):
-        """Load the given config file.
-
-        """
-        try:
-            self._load_unique(conf_file)
-        except ValueError as exc:
-            print("Unable to load JSON configuration file %s, probably "
-                  "because of a JSON decoding error.\n%r" % (conf_file,
-                                                             exc))
-        else:
-            print("Using configuration file %s." % conf_file)
-
-    def _load_unique(self, path):
+    def load(self, path):
         """Populate the Config class with everything that sits inside
-        the JSON file path (usually something like /etc/cms.conf). The
-        only pieces of data treated differently are the elements of
-        core_services and other_services that are sent to async
-        config.
+        the given JSON file path
 
         path (string): the path of the JSON config file.
 
         """
-        # Load config file
-        with io.open(path, 'rb') as fobj:
-            data = json.load(fobj)
+        try:
+            with io.open(path, 'rb') as fobj:
+                data = json.load(fobj)
 
-            # Put everything.
-            for key, value in data.iteritems():
-                setattr(self.args, key, value)
+                # Put everything.
+                for key, value in data.iteritems():
+                    setattr(self.args, key, value)
+        except IOError:
+            logger.exception("Error opening config file.")
+        except ValueError:
+            logger.exception("Config file is invalid JSON.")
+        else:
+            logger.info("Using config file %s.", path)
 
 
 # Create an instance of the Config class.

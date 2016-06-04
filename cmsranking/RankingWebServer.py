@@ -499,7 +499,7 @@ def main():
             keyfile=config.args.https_keyfile)
         servers.append(https_server)
 
-    print("RankingWebServer started.")
+    logger.info("RankingWebServer started.")
 
     try:
         gevent.joinall(list(gevent.spawn(s.serve_forever) for s in servers))
