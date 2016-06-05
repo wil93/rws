@@ -63,7 +63,7 @@ class Config(object):
 
         """
         parser = argparse.ArgumentParser(
-            description="Ranking for CMS.")
+            description="Ranking Web Server.")
 
         parser.add_argument(
             "-d", "--drop",
