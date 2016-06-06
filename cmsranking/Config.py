@@ -24,7 +24,10 @@ from __future__ import unicode_literals
 
 import argparse
 import io
-import json
+try:
+    import json5 as json
+except ImportError:
+    import json
 import logging
 import os
 import six

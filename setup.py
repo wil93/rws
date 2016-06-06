@@ -17,6 +17,7 @@ setup(name='rws',
           'six',
           'gevent',
           'werkzeug',
+          'json5',
       ],
       entry_points={
           'console_scripts': [
