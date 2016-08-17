@@ -81,6 +81,8 @@ var UserDetail = new function () {
                 console.error("Error while getting the submissions for " + self.user_id);
             }
         });
+
+        self.do_show();
     };
 
     self.history_callback = function () {
@@ -120,61 +122,80 @@ var UserDetail = new function () {
     };
 
     self.do_show = function () {
-        if (self.data_fetched == 2) {
-            self.f_name_label.text(self.user["f_name"]);
-            self.l_name_label.text(self.user["l_name"]);
-            self.face_image.attr("src", Config.get_face_url(self.user_id));
+        self.f_name_label.text(self.user["f_name"]);
+        self.l_name_label.text(self.user["l_name"]);
+        self.face_image.attr("src", Config.get_face_url(self.user_id));
 
-            if (self.user["team"]) {
-                self.team_label.text(DataStore.teams[self.user["team"]]["name"]);
-                self.flag_image.attr("src", Config.get_flag_url(self.user['team']));
-                self.flag_image.removeClass("hidden");
-            } else {
-                self.team_label.text("");
-                self.flag_image.addClass("hidden");
-            }
-
-            var s = "<tr class=\"global\"> \
-                        <td class=\"name\">Global</td> \
-                        <td class=\"score\">" + (self.global_s.length > 0 ? round_to_str(self.global_s[self.global_s.length-1][1], DataStore.global_score_precision) : 0) + "</td> \
-                        <td class=\"rank\">" + (self.global_r.length > 0 ? self.global_r[self.global_r.length-1][1] : 1) + "</td> \
-                        <td class=\"btn\"><a>Show</a></td> \
-                    </tr>";
-
-            var contests = DataStore.contest_list;
-            for (var i in contests) {
-                var contest = contests[i];
-                var c_id = contest["key"];
-
-                s += "<tr class=\"contest\" data-contest=\"" + c_id +"\"> \
-                         <td class=\"name\">" + contest['name'] + "</td> \
-                         <td class=\"score\">" + (self.contest_s[c_id].length > 0 ? round_to_str(self.contest_s[c_id][self.contest_s[c_id].length-1][1], contest["score_precision"]) : 0) + "</td> \
-                         <td class=\"rank\">" + (self.contest_r[c_id].length > 0 ? self.contest_r[c_id][self.contest_r[c_id].length-1][1] : 1) + "</td> \
-                         <td class=\"btn\"><a>Show</a></td> \
-                      </tr>"
-
-                var tasks = contest["tasks"];
-                for (var j in tasks) {
-                    var task = tasks[j];
-                    var t_id = task["key"];
-
-                    s += "<tr class=\"task\" data-task=\"" + t_id +"\"> \
-                             <td class=\"name\">" + task['name'] + "</td> \
-                             <td class=\"score\">" + (self.task_s[t_id].length > 0 ? round_to_str(self.task_s[t_id][self.task_s[t_id].length-1][1], task["score_precision"]) : 0) + "</td> \
-                             <td class=\"rank\">" + (self.task_r[t_id].length > 0 ? self.task_r[t_id][self.task_r[t_id].length-1][1] : 1) + "</td> \
-                             <td class=\"btn\"><a>Show</a></td> \
-                          </tr>"
-                }
-            }
-
-            self.navigator.html(s);
-
-            self.active = null;
-
-            $('tr.global td.btn', self.navigator).click();
-
-            $("#UserDetail_bg").addClass("open");
+        if (self.user["team"]) {
+            self.team_label.text(DataStore.teams[self.user["team"]]["name"]);
+            self.flag_image.attr("src", Config.get_flag_url(self.user['team']));
+            self.flag_image.removeClass("hidden");
+        } else {
+            self.team_label.text("");
+            self.flag_image.addClass("hidden");
         }
+
+        var s = "<tr class=\"global\">";
+        s += "<td class=\"name\">Global</td>";
+
+        if (self.data_fetched == 2) {
+            s += "<td class=\"score\">" + (self.global_s.length > 0 ? round_to_str(self.global_s[self.global_s.length-1][1], DataStore.global_score_precision) : 0) + "</td>";
+            s += "<td class=\"rank\">" + (self.global_r.length > 0 ? self.global_r[self.global_r.length-1][1] : 1) + "</td>";
+        } else {
+            s += "<td class=\"score\">...</td>";
+            s += "<td class=\"rank\">...</td>";
+        }
+
+        s += "<td class=\"btn\"><a>Show</a></td>";
+        s += "</tr>";
+
+        var contests = DataStore.contest_list;
+        for (var i in contests) {
+            var contest = contests[i];
+            var c_id = contest["key"];
+
+            s += "<tr class=\"contest\" data-contest=\"" + c_id +"\">";
+            s += "<td class=\"name\">" + contest['name'] + "</td>";
+
+            if (self.data_fetched == 2) {
+                s += "<td class=\"score\">" + (self.contest_s[c_id].length > 0 ? round_to_str(self.contest_s[c_id][self.contest_s[c_id].length-1][1], contest["score_precision"]) : 0) + "</td>";
+                s += "<td class=\"rank\">" + (self.contest_r[c_id].length > 0 ? self.contest_r[c_id][self.contest_r[c_id].length-1][1] : 1) + "</td>";
+            } else {
+                s += "<td class=\"score\">...</td>";
+                s += "<td class=\"rank\">...</td>";
+            }
+
+            s += "<td class=\"btn\"><a>Show</a></td>";
+            s += "</tr>"
+
+            var tasks = contest["tasks"];
+            for (var j in tasks) {
+                var task = tasks[j];
+                var t_id = task["key"];
+
+                s += "<tr class=\"task\" data-task=\"" + t_id +"\">";
+                s += "<td class=\"name\">" + task['name'] + "</td>";
+
+                if (self.data_fetched == 2) {
+                    s += "<td class=\"score\">" + (self.task_s[t_id].length > 0 ? round_to_str(self.task_s[t_id][self.task_s[t_id].length-1][1], task["score_precision"]) : 0) + "</td>";
+                    s += "<td class=\"rank\">" + (self.task_r[t_id].length > 0 ? self.task_r[t_id][self.task_r[t_id].length-1][1] : 1) + "</td>";
+                } else {
+                    s += "<td class=\"score\">...</td>";
+                    s += "<td class=\"rank\">...</td>";
+                }
+
+                s += "<td class=\"btn\"><a>Show</a></td>";
+                s += "</tr>";
+            }
+        }
+
+        self.navigator.html(s);
+
+        self.active = null;
+
+        $('tr.global td.btn', self.navigator).click();
+
+        $("#UserDetail_bg").addClass("open");
     };
 
     self.show_global = function () {
