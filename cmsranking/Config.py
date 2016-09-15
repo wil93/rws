@@ -66,7 +66,8 @@ class Config(object):
 
         """
         parser = argparse.ArgumentParser(
-            description="Ranking Web Server.")
+            description="Ranking Web Server.",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         parser.add_argument(
             "-d", "--drop",
@@ -96,7 +97,7 @@ class Config(object):
         parser.add_argument(
             "-t", "--timeout", default=600,  # 10 minutes (in seconds)
             action="store", type=int,
-            help="Listening HTTPS port for RankingWebServer.")
+            help="Timeout.")
 
         parser.add_argument(
             "-b", "--bind-address", default="",
@@ -116,7 +117,7 @@ class Config(object):
         parser.add_argument(
             "--buffer-size", default=100,  # Needs to be strictly positive
             action="store", type=int,
-            help="Listening HTTPS port for RankingWebServer.")
+            help="Buffer size.")
 
         parser.add_argument(
             "-c", "--config",
