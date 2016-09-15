@@ -31,27 +31,33 @@ Ranking Web Server.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --drop            Drop the data already stored.
+  -d, --drop            Drop the data already stored. (default: False)
   -p HTTP_PORT, --http-port HTTP_PORT
-                        Listening HTTP port for RankingWebServer.
+                        Listening HTTP port for RankingWebServer. (default:
+                        8890)
   --https-port HTTPS_PORT
-                        Listening HTTPS port for RankingWebServer.
+                        Listening HTTPS port for RankingWebServer. (default:
+                        None)
   --https-certfile HTTPS_CERTFILE
-                        HTTPS certificate file for RankingWebServer.
+                        HTTPS certificate file for RankingWebServer. (default:
+                        None)
   --https-keyfile HTTPS_KEYFILE
-                        HTTPS key file for RankingWebServer.
+                        HTTPS key file for RankingWebServer. (default: None)
   -t TIMEOUT, --timeout TIMEOUT
-                        Listening HTTPS port for RankingWebServer.
+                        Timeout. (default: 600)
   -b BIND_ADDRESS, --bind-address BIND_ADDRESS
-                        Listening address for RankingWebServer.
+                        Listening address for RankingWebServer. (default: )
   --realm-name REALM_NAME
-                        Realm name for authentication.
+                        Realm name for authentication. (default: Scoreboard)
   -l LOGIN, --login LOGIN
                         Login information for adding and editing data.
+                        (default: usern4me:passw0rd)
   --buffer-size BUFFER_SIZE
-                        Listening HTTPS port for RankingWebServer.
+                        Buffer size. (default: 100)
   -c CONFIG, --config CONFIG
-                        Path to a JSON config file.
-  --log-dir LOG_DIR     Directory where RWS will store log files.
-  --lib-dir LIB_DIR     Directory where RWS will store runtime data.
+                        Path to a JSON config file. (default: None)
+  --log-dir LOG_DIR     Directory where RWS will store log files. (default:
+                        /var/local/log/cms/ranking)
+  --lib-dir LIB_DIR     Directory where RWS will store runtime data. (default:
+                        /var/local/lib/cms/ranking)
 ```
