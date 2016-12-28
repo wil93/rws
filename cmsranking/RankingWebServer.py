@@ -440,7 +440,7 @@ class RoutingHandler(object):
 def main():
     """Entry point for RWS.
 
-    return (bool): True if executed successfully.
+    return (int): exit code (0 on success, 1 on error)
 
     """
     if config.args.drop:
@@ -453,8 +453,7 @@ def main():
             shutil.rmtree(config.args.lib_dir)
         else:
             print("Not removing directory %s." % config.args.lib_dir)
-
-        return False
+        return 1
 
     Contest.store.load_from_disk()
     Task.store.load_from_disk()
@@ -507,4 +506,4 @@ def main():
         pass
     finally:
         gevent.joinall(list(gevent.spawn(s.stop) for s in servers))
-    return True
+    return 0
