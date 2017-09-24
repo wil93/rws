@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Contest Management System - http://cms-dev.github.io/
-# Copyright © 2011-2015 Luca Wehrstedt <luca.wehrstedt@gmail.com>
+# Copyright © 2011-2017 Luca Wehrstedt <luca.wehrstedt@gmail.com>
 # Copyright © 2016 William Di Luigi <williamdiluigi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -134,8 +134,6 @@ class StoreHandler(object):
             return NotFound()
         if key not in self.store:
             raise NotFound()
-        if request.accept_mimetypes.quality("application/json") <= 0:
-            raise NotAcceptable()
 
         response.status_code = 200
         response.headers[b'Timestamp'] = b"%0.6f" % time.time()
@@ -143,9 +141,6 @@ class StoreHandler(object):
         response.data = json.dumps(self.store.retrieve(key))
 
     def get_list(self, request, response):
-        if request.accept_mimetypes.quality("application/json") <= 0:
-            raise NotAcceptable()
-
         response.status_code = 200
         response.headers[b'Timestamp'] = b"%0.6f" % time.time()
         response.mimetype = "application/json"
