@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='rws',
-      version='0.5.1',
+      version='0.6',
       description='Ranking Web Server',
       author='Algorithm Ninja',
       license='AGPL3',
